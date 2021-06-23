@@ -1,9 +1,9 @@
 import type e from "express";
 import { MESSAGE_URL } from "./urls";
 import waitConnect from "../connect";
-import { IRequest, IResponse } from "./type";
+import { IResult } from "./type";
 import { PV_KEY } from "../constant";
-import { RowDataPacket } from "mysql2/typings/mysql";
+import { createInsertSql, createSelectSql, createUpdateSql } from "./createSql";
 
 interface IMessage<TPayload = any> {
   key: string;
@@ -18,19 +18,31 @@ interface IMessage<TPayload = any> {
   userInfo: any;
 }
 
-type IResult<T = any> = T & RowDataPacket;
-
 export default {
   [MESSAGE_URL](app: e.Express) {
-    app.get(MESSAGE_URL, async (req, res: IResponse<{ user: string }>) => {
-      const params: IMessage<string> = JSON.parse(decodeURIComponent(req.url.split("?")[1]));
+    app.get(MESSAGE_URL, async (req, res) => {
+      const search = req.url.split("?")[1];
+      let params: IMessage<string>;
+      if (search) {
+        try {
+          params = JSON.parse(decodeURIComponent(search));
+        } catch {
+          res.send("cannot parse params");
+          res.end();
+          return;
+        }
+      } else {
+        res.send("not find params");
+        res.end();
+        return;
+      }
 
       const connect = await waitConnect;
       switch (params.key) {
         case PV_KEY: {
           type Results = IResult<{ url: string; times: number; device: string; version: string }>[];
           const results = await new Promise<Results>((resolve) => {
-            connect.query<Results>(`SELECT times FROM \`pv\` where url='${params.payload}'`, function (err, results, fields) {
+            connect.query<Results>(createSelectSql("pv", ["times"], { url: params.payload }).sql, function (err, results, fields) {
               if (err) throw err;
               resolve(results);
             });
@@ -45,33 +57,28 @@ export default {
               //   device: params.clientInfo.device,
               //   version: params.clientInfo.version,
               // } as Results[0]);
-              sql = `
-                INSERT INTO pv (url, times, device, version)  
-                VALUES ('${params.payload}','1','${params.clientInfo.device}','${params.clientInfo.version}')
-              `;
+              ({ sql } = createInsertSql("pv", {
+                url: params.payload,
+                times: 1,
+                device: params.clientInfo.device,
+                version: params.clientInfo.version,
+              }));
             } else {
-              sql = `UPDATE pv SET times = '${results[0].times + 1}' WHERE url = '${params.payload}'`;
+              ({ sql } = createUpdateSql("pv", { times: results[0].times + 1 }, { url: params.payload }));
             }
-            console.log("sql=>", sql);
             connect.query(sql, function (err, results, fields) {
               if (err) throw err;
               resolve();
             });
           });
           console.log("采集成功");
-          res.end("采集成功");
+          res.send("采集成功");
           break;
         }
         default:
-          res.end();
+          res.send("not match case");
       }
-      // res.send({ user: req.url });
-      // waitConnect.then((connect) => {
-      //   connect.query("SELECT * FROM `users`", function (err, results, fields) {
-      //     if (err) throw err;
-      //     console.log(results);
-      //   });
-      // });
+      res.end();
     });
   },
 };
