@@ -1,1 +1,1 @@
-export const PV_URL = "/message/getPV";
+export const MESSAGE_URL = "/message";
