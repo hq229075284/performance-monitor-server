@@ -9,5 +9,5 @@ export const FIRST_PAINT_KEY = "first_paint";
 
 export const TABLE_NAMES = {
   PV: "pv" as "pv",
-  DEVICE: "device" as "device",
+  UV: "uv" as "uv",
 };

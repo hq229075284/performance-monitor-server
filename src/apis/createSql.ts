@@ -36,16 +36,20 @@ function getSubStatementOfWhere(whereValue: Object) {
 function setSelectSql(
   this: { sql: string },
   tableName: TABLE_NAME,
-  fields: string[],
+  fields: string[] | "*",
   whereValue?: Object,
-  orderBy?: "desc" | "asc",
+  orderBy?: { orderKeys: string[]; sort: "desc" | "asc" },
   groupBy?: string
 ) {
   let where = "";
   if (whereValue) {
     where = getSubStatementOfWhere(whereValue);
   }
-  this.sql = `SELECT ${fields.join(",")} FROM ${tableName} ${where}`;
+  let order = "";
+  if (orderBy) {
+    order = ` ORDER BY ${orderBy.orderKeys.join(",")} ${orderBy.sort}`;
+  }
+  this.sql = `SELECT ${fields === "*" ? "*" : fields.join(",")} FROM ${tableName} ${where} ${order}`;
   return this;
 }
 // 创建select sql语句

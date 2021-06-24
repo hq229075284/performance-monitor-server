@@ -21,21 +21,28 @@ async function receiveMessage(req: IRequest, res: IResponse) {
     res.send("not find params");
     return;
   }
-
-  switch (params.key) {
-    case PV_KEY: {
-      await processPV(params);
-      break;
+  try {
+    switch (params.key) {
+      case PV_KEY: {
+        await processPV(params);
+        console.log("pv采集成功");
+        break;
+      }
+      case UV_KEY: {
+        await processUV(params, req);
+        console.log("uv采集成功");
+        break;
+      }
+      default:
+        res.send("not match case");
+        return;
     }
-    case UV_KEY: {
-      await processUV(params);
-      break;
-    }
-    default:
-      res.send("not match case");
-      return;
+  } catch (e) {
+    console.warn(`采集失败 => ${e.message}`);
+    res.end();
+    return;
   }
-  console.log("采集成功");
+
   const fileBuffer = await new Promise<Buffer>((resolve) => {
     fs.readFile(path.join(__dirname, "../../assets/1.png"), {}, (err, f) => {
       if (err) throw err;
