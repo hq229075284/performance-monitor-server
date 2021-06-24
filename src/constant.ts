@@ -6,3 +6,8 @@ export const SOURCE_LOADED_KEY = "source_loaded";
 export const FIRST_INTERACTIVE_KEY = "first_interactive";
 export const AJAX_KEY = "ajax";
 export const FIRST_PAINT_KEY = "first_paint";
+
+export const TABLE_NAMES = {
+  PV: "pv" as "pv",
+  DEVICE: "device" as "device",
+};

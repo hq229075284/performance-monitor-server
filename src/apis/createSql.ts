@@ -1,3 +1,9 @@
+import type { RowDataPacket } from "mysql2/typings/mysql";
+import waitConnect from "../connect";
+import { TABLE_NAMES } from "../constant";
+
+type TABLE_NAME = typeof TABLE_NAMES[keyof typeof TABLE_NAMES];
+
 function referCreateSql<T extends {} = { sql: string }, P extends any[] = []>(createSql) {
   return function createProxy(...rest: P) {
     const proxy = new Proxy<T>({} as T, {
@@ -29,7 +35,7 @@ function getSubStatementOfWhere(whereValue: Object) {
 
 function setSelectSql(
   this: { sql: string },
-  tableName: string,
+  tableName: TABLE_NAME,
   fields: string[],
   whereValue?: Object,
   orderBy?: "desc" | "asc",
@@ -45,7 +51,7 @@ function setSelectSql(
 // 创建select sql语句
 const createSelectSql = referCreateSql<{ sql: string }, Parameters<typeof setSelectSql>>(setSelectSql);
 
-function setInsertSql(this: { sql: string }, tableName: string, keyValue: Object) {
+function setInsertSql(this: { sql: string }, tableName: TABLE_NAME, keyValue: Object) {
   const keys = Object.keys(keyValue);
   this.sql = `INSERT INTO ${tableName} (${keys.join(",")}) VALUES (${keys
     .map((key) => getPropertyValueWithQuot(keyValue[key]))
@@ -55,7 +61,7 @@ function setInsertSql(this: { sql: string }, tableName: string, keyValue: Object
 // 创建insert sql语句
 const createInsertSql = referCreateSql<{ sql: string }, Parameters<typeof setInsertSql>>(setInsertSql);
 
-function setUpdateSql(this: { sql: string }, tableName: string, keyValue: Object, whereValue?: Object) {
+function setUpdateSql(this: { sql: string }, tableName: TABLE_NAME, keyValue: Object, whereValue?: Object) {
   const keys = Object.keys(keyValue);
   let where = "";
   if (whereValue) {
@@ -67,4 +73,27 @@ function setUpdateSql(this: { sql: string }, tableName: string, keyValue: Object
 // 创建update sql语句
 const createUpdateSql = referCreateSql<{ sql: string }, Parameters<typeof setUpdateSql>>(setUpdateSql);
 
-export { createSelectSql, createInsertSql, createUpdateSql };
+// ts编译会报错
+// function execSqlUsePromise<T extends RowDataPacket[] = any[]>(sql: string) {
+//   return new Promise<T>((resolve) => {
+//     waitConnect.then((connect) => {
+//       connect.query<T>(sql, function (err, results, fields) {
+//         if (err) throw err;
+//         resolve(results);
+//       });
+//     });
+//   });
+// }
+
+async function execSqlUsePromise<T extends RowDataPacket[] = any[]>(sql: string) {
+  const connect = await waitConnect;
+  const results = await new Promise<T>((resolve) => {
+    connect.query<T>(sql, function (err, results, fields) {
+      if (err) throw err;
+      resolve(results);
+    });
+  });
+  return results;
+}
+
+export { createSelectSql, createInsertSql, createUpdateSql, execSqlUsePromise };
