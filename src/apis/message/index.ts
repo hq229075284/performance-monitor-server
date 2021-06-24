@@ -4,12 +4,12 @@ import { IRequest, IResponse } from "../type";
 import { PV_KEY, UV_KEY } from "../../constant";
 import path = require("path");
 import fs = require("fs");
-import type { IMessage } from "./process";
+// import type { IMessage } from "./process";
 import { processUV, processPV } from "./process";
 
 async function receiveMessage(req: IRequest, res: IResponse) {
   const search = req.url.split("?")[1];
-  let params: IMessage<string>;
+  let params;
   if (search) {
     try {
       params = JSON.parse(decodeURIComponent(search));
@@ -37,7 +37,7 @@ async function receiveMessage(req: IRequest, res: IResponse) {
   }
   console.log("采集成功");
   const fileBuffer = await new Promise<Buffer>((resolve) => {
-    fs.readFile(path.join(__dirname, "../assets/1.png"), {}, (err, f) => {
+    fs.readFile(path.join(__dirname, "../../assets/1.png"), {}, (err, f) => {
       if (err) throw err;
       resolve(f);
     });
