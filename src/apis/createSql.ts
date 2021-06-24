@@ -47,7 +47,7 @@ function setSelectSql(
   }
   let order = "";
   if (orderBy) {
-    order = ` ORDER BY ${orderBy.orderKeys.join(",")} ${orderBy.sort}`;
+    order = ` ORDER BY ${orderBy.orderKeys.join(",")} ${orderBy.sort} `;
   }
   this.sql = `SELECT ${fields === "*" ? "*" : fields.join(",")} FROM ${tableName} ${where} ${order}`;
   return this;
