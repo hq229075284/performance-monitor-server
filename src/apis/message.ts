@@ -18,6 +18,29 @@ interface IMessage<TPayload = any> {
   userInfo: any;
 }
 
+async function processPV(params: IMessage<string>) {
+  let sql: string;
+  type Results = IResult<{ times: number }>[];
+  sql = createSelectSql(TABLE_NAMES.PV, ["times"], { url: params.payload }).sql;
+  const results = await execSqlUsePromise<Results>(sql);
+
+  if (results.length === 0) {
+    ({ sql } = createInsertSql(TABLE_NAMES.PV, { url: params.payload, times: 1 }));
+    await execSqlUsePromise(sql);
+  } else {
+    ({ sql } = createUpdateSql(TABLE_NAMES.PV, { times: results[0].times + 1 }, { url: params.payload }));
+    await execSqlUsePromise(sql);
+  }
+
+  ({ sql } = createInsertSql(TABLE_NAMES.DEVICE, {
+    deviceName: params.clientInfo.device,
+    deviceVersion: params.clientInfo.version,
+    timestamp: Date.now(),
+    refId: `${TABLE_NAMES.PV}_${params.payload}`,
+  }));
+  await execSqlUsePromise(sql);
+}
+
 async function receiveMessage(req: IRequest, res: IResponse) {
   const search = req.url.split("?")[1];
   let params: IMessage<string>;
@@ -26,52 +49,31 @@ async function receiveMessage(req: IRequest, res: IResponse) {
       params = JSON.parse(decodeURIComponent(search));
     } catch {
       res.send("cannot parse params");
-      res.end();
       return;
     }
   } else {
     res.send("not find params");
-    res.end();
     return;
   }
 
   let sql: string;
   switch (params.key) {
     case PV_KEY: {
-      type Results = IResult<{ times: number }>[];
-      sql = createSelectSql(TABLE_NAMES.PV, ["times"], { url: params.payload }).sql;
-      const results = await execSqlUsePromise<Results>(sql);
-
-      if (results.length === 0) {
-        ({ sql } = createInsertSql(TABLE_NAMES.PV, { url: params.payload, times: 1 }));
-        await execSqlUsePromise(sql);
-      } else {
-        ({ sql } = createUpdateSql(TABLE_NAMES.PV, { times: results[0].times + 1 }, { url: params.payload }));
-        await execSqlUsePromise(sql);
-      }
-
-      ({ sql } = createInsertSql(TABLE_NAMES.DEVICE, {
-        deviceName: params.clientInfo.device,
-        deviceVersion: params.clientInfo.version,
-        timestamp: Date.now(),
-        refId: `${TABLE_NAMES.PV}_${params.payload}`,
-      }));
-      await execSqlUsePromise(sql);
-
-      console.log("采集成功");
-      const fileBuffer = await new Promise<Buffer>((resolve) => {
-        fs.readFile(path.join(__dirname, "../assets/1.png"), {}, (err, f) => {
-          if (err) throw err;
-          resolve(f);
-        });
-      });
-      res.status(200).send(fileBuffer);
+      await processPV(params);
       break;
     }
     default:
       res.send("not match case");
+      return;
   }
-  res.end();
+  console.log("采集成功");
+  const fileBuffer = await new Promise<Buffer>((resolve) => {
+    fs.readFile(path.join(__dirname, "../assets/1.png"), {}, (err, f) => {
+      if (err) throw err;
+      resolve(f);
+    });
+  });
+  res.status(200).send(fileBuffer);
 }
 
 export default {
