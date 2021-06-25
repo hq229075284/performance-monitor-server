@@ -13,6 +13,8 @@
     "experimentalDecorators": true,
     "baseUrl": "./",
     "noImplicitAny": false,
+    // https://medium.com/@VincentSchoener/say-bye-to-relative-paths-in-typescript-7242b6e6f252
+    // https://dev.to/larswaechter/path-aliases-with-typescript-in-nodejs-4353
     // https://github.com/dividab/tsconfig-paths/issues/61#issuecomment-433329831
     "paths": {
       "src/*": ["src/*"]

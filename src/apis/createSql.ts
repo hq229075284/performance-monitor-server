@@ -30,7 +30,7 @@ function getValueWithQuot(v: string, quot = "'") {
 
 function getSubStatementOfWhere(whereValue: Object) {
   const keys = Object.keys(whereValue);
-  return ` WHERE ${keys.map((key) => `${getValueWithQuot(key)}=${getValueWithQuot(whereValue[key])}`).join(" and ")} `;
+  return ` WHERE ${keys.map((key) => `${getValueWithQuot(key, "`")}=${getValueWithQuot(whereValue[key])}`).join(" and ")} `;
 }
 
 function setSelectSql(
@@ -47,7 +47,7 @@ function setSelectSql(
   }
   let order = "";
   if (orderBy) {
-    order = ` ORDER BY ${orderBy.orderKeys.map((k) => getValueWithQuot(k)).join(",")} ${orderBy.sort} `;
+    order = ` ORDER BY ${orderBy.orderKeys.map((k) => getValueWithQuot(k, "`")).join(",")} ${orderBy.sort} `;
   }
   this.sql = `SELECT ${
     fields === "*" ? "*" : fields.map((f) => getValueWithQuot(f, "`")).join(",")
