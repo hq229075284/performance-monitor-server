@@ -10,4 +10,5 @@ export const FIRST_PAINT_KEY = "first_paint";
 export const TABLE_NAMES = {
   PV: "pv" as "pv",
   UV: "uv" as "uv",
+  VISIT: "visit" as "visit",
 };

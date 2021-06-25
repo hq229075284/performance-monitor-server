@@ -1,11 +1,12 @@
 import type e from "express";
 import { MESSAGE_URL } from "../urls";
 import { IRequest, IResponse } from "../type";
-import { PV_KEY, UV_KEY } from "../../constant";
+import { ENTRY_KEY, PV_KEY, UV_KEY } from "../../constant";
 import path = require("path");
 import fs = require("fs");
 // import type { IMessage } from "./process";
-import { processUV, processPV } from "./process";
+import { processUV, processPV, processEntry } from "./process";
+import log from "src/log";
 
 async function receiveMessage(req: IRequest, res: IResponse) {
   const search = req.url.split("?")[1];
@@ -25,12 +26,17 @@ async function receiveMessage(req: IRequest, res: IResponse) {
     switch (params.key) {
       case PV_KEY: {
         await processPV(params);
-        console.log("pv采集成功");
+        log.success("pv采集成功");
         break;
       }
       case UV_KEY: {
         await processUV(params, req);
-        console.log("uv采集成功");
+        log.success("uv采集成功");
+        break;
+      }
+      case ENTRY_KEY: {
+        await processEntry(params);
+        log.success("网页访问入口采集成功");
         break;
       }
       default:
@@ -38,7 +44,7 @@ async function receiveMessage(req: IRequest, res: IResponse) {
         return;
     }
   } catch (e) {
-    console.warn(`采集失败 => ${e.message}`);
+    log.error(`采集失败 => ${e.message}`);
     res.end();
     return;
   }

@@ -12,7 +12,7 @@ export interface IMessage<TPayload = any> {
     platform: string;
   };
   payload: TPayload;
-  userInfo: any;
+  userInfo: { usercode: string; username: string };
 }
 
 function getDate(timestamp: number) {
@@ -23,6 +23,7 @@ function getDate(timestamp: number) {
   return `${year}/${month}/${day}`;
 }
 
+// 处理pv采集
 async function processPV(params: IMessage<string>) {
   //   type Results = IResult<{ times: number }>[];
   //   sql = createSelectSql(TABLE_NAMES.PV, ["times"], { url: params.payload }).sql;
@@ -36,21 +37,28 @@ async function processPV(params: IMessage<string>) {
   await execSqlUsePromise(sql);
 }
 
-async function processUV(params: IMessage<{ url: string; userInfo: { username: string } }>, req: IRequest) {
+// 处理uv采集
+async function processUV(params: IMessage<{ url: string }>, req: IRequest) {
   let sql = "";
-  sql = createSelectSql(TABLE_NAMES.UV, "*", { username: params.userInfo.username }, { orderKeys: ["timestamp"], sort: "asc" }).sql;
+  sql = createSelectSql(
+    TABLE_NAMES.UV,
+    "*",
+    { usercode: params.userInfo.usercode, url: params.payload.url },
+    { orderKeys: ["timestamp"], sort: "desc" }
+  ).sql;
   type Results = IResult<{ timestamp: number }>[];
   const results = await execSqlUsePromise<Results>(sql);
   const now = Date.now();
   if (results.length > 0) {
-    const lastone = results[results.length - 1];
-    if (getDate(lastone.timestamp) === getDate(now)) {
+    const newest = results[0];
+    if (getDate(newest.timestamp) === getDate(now)) {
       throw new Error("UV重复采集");
     }
   }
   const [ipv6, ipv4] = req.ip.split(/(?<=[^:]):/);
   sql = createInsertSql(TABLE_NAMES.UV, {
-    username: params.payload.userInfo.username,
+    usercode: params.userInfo.usercode,
+    username: params.userInfo.username,
     ipv4,
     ipv6,
     url: params.payload.url,
@@ -59,4 +67,13 @@ async function processUV(params: IMessage<{ url: string; userInfo: { username: s
   await execSqlUsePromise(sql);
 }
 
-export { processPV, processUV };
+// 处理网站入口采集
+async function processEntry(params: IMessage<{ url: string; entryUrl: string }>) {
+  const sql = createInsertSql(TABLE_NAMES.VISIT, {
+    url: params.payload.url,
+    from: params.payload.entryUrl,
+  }).sql;
+  await execSqlUsePromise(sql);
+}
+
+export { processPV, processUV, processEntry };

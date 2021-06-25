@@ -23,14 +23,14 @@ function referCreateSql<T extends {} = { sql: string }, P extends any[] = []>(cr
   };
 }
 
-function getPropertyValueWithQuot(v: string) {
+function getValueWithQuot(v: string, quot = "'") {
   if (v === "?") return v;
-  return `'${v}'`;
+  return `${quot}${v}${quot}`;
 }
 
 function getSubStatementOfWhere(whereValue: Object) {
   const keys = Object.keys(whereValue);
-  return ` WHERE ${keys.map((key) => `${key}=${getPropertyValueWithQuot(whereValue[key])}`).join(" and ")} `;
+  return ` WHERE ${keys.map((key) => `${getValueWithQuot(key)}=${getValueWithQuot(whereValue[key])}`).join(" and ")} `;
 }
 
 function setSelectSql(
@@ -47,9 +47,11 @@ function setSelectSql(
   }
   let order = "";
   if (orderBy) {
-    order = ` ORDER BY ${orderBy.orderKeys.join(",")} ${orderBy.sort} `;
+    order = ` ORDER BY ${orderBy.orderKeys.map((k) => getValueWithQuot(k)).join(",")} ${orderBy.sort} `;
   }
-  this.sql = `SELECT ${fields === "*" ? "*" : fields.join(",")} FROM ${tableName} ${where} ${order}`;
+  this.sql = `SELECT ${
+    fields === "*" ? "*" : fields.map((f) => getValueWithQuot(f, "`")).join(",")
+  } FROM ${tableName} ${where} ${order}`;
   return this;
 }
 // 创建select sql语句
@@ -57,8 +59,8 @@ const createSelectSql = referCreateSql<{ sql: string }, Parameters<typeof setSel
 
 function setInsertSql(this: { sql: string }, tableName: TABLE_NAME, keyValue: Object) {
   const keys = Object.keys(keyValue);
-  this.sql = `INSERT INTO ${tableName} (${keys.join(",")}) VALUES (${keys
-    .map((key) => getPropertyValueWithQuot(keyValue[key]))
+  this.sql = `INSERT INTO ${tableName} (${keys.map((k) => getValueWithQuot(k, "`")).join(",")}) VALUES (${keys
+    .map((key) => getValueWithQuot(keyValue[key]))
     .join(",")})`;
   return this;
 }
@@ -71,7 +73,9 @@ function setUpdateSql(this: { sql: string }, tableName: TABLE_NAME, keyValue: Ob
   if (whereValue) {
     where = getSubStatementOfWhere(whereValue);
   }
-  this.sql = `UPDATE ${tableName} SET ${keys.map((key) => `${key}=${getPropertyValueWithQuot(keyValue[key])}`).join(",")} ${where}`;
+  this.sql = `UPDATE ${tableName} SET ${keys
+    .map((key) => `${getValueWithQuot(key, "`")}=${getValueWithQuot(keyValue[key])}`)
+    .join(",")} ${where}`;
   return this;
 }
 // 创建update sql语句
