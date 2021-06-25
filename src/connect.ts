@@ -1,7 +1,11 @@
+// tsconfig.json的esModuleInterop为false时
 // import ... from ... or import ... require ..., 影响编译后的调用结果
 // import mysqlSsh = require("mysql-ssh"); => var mysqlSsh = require("mysql-ssh");mysqlSsh.connect
 // import mysqlSsh from "mysql-ssh" => var mysql_ssh_1 = require("mysql-ssh");mysql_ssh_1["default"].connect
-import mysqlSsh = require("mysql-ssh");
+// import * as mysqlSsh from "mysql-ssh"; => var mysqlSsh = require("mysql-ssh");mysqlSsh.connect
+
+import mysqlSsh from "mysql-ssh";
+// import mysqlSsh = require("mysql-ssh");
 import secret from "../secret";
 // https://github.com/sidorares/node-mysql2/blob/master/documentation/Extras.md#connecting-using-custom-stream
 // https://github.com/grrr-amsterdam/mysql-ssh

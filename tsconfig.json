@@ -11,8 +11,9 @@
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "experimentalDecorators": true,
-    "baseUrl": ".",
+    "baseUrl": "./",
     "noImplicitAny": false,
+    // https://github.com/dividab/tsconfig-paths/issues/61#issuecomment-433329831
     "paths": {
       "src/*": ["src/*"]
     },

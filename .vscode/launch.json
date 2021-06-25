@@ -11,7 +11,7 @@
       "skipFiles": ["<node_internals>/**"],
       "args": ["./src/app.ts"],
       "runtimeExecutable": "node",
-      "runtimeArgs": ["-r", "ts-node/register"],
+      "runtimeArgs": ["-r", "ts-node/register", "-r", "tsconfig-paths/register"],
       "outFiles": ["${workspaceFolder}/**/*.js"]
     }
   ]
