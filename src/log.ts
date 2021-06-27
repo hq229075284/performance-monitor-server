@@ -19,6 +19,9 @@ log4js.configure({
 const logger = log4js.getLogger();
 
 class Log {
+  split() {
+    console.log("---- split line ----");
+  }
   log(message: string) {
     console.log(message);
   }

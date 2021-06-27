@@ -4,24 +4,24 @@ import { TABLE_NAMES } from "../constant";
 
 type TABLE_NAME = typeof TABLE_NAMES[keyof typeof TABLE_NAMES];
 
-function referCreateSql<T extends {} = { sql: string }, P extends any[] = []>(createSql) {
-  return function createProxy(...rest: P) {
-    const proxy = new Proxy<T>({} as T, {
-      get(target, propKey) {
-        if (typeof propKey === "string") {
-          console.log(`${propKey}=>${target[propKey]}`);
-        }
-        return target[propKey];
-      },
-      set(target, propKey, value) {
-        target[propKey] = value;
-        return true;
-      },
-    });
-    createSql.apply(proxy, rest);
-    return proxy;
-  };
-}
+// function referCreateSql<T extends {} = { sql: string }, P extends any[] = []>(createSql) {
+//   return function createProxy(...rest: P) {
+//     const proxy = new Proxy<T>({} as T, {
+//       get(target, propKey) {
+//         if (typeof propKey === "string") {
+//           console.log(`${propKey}=>${target[propKey]}`);
+//         }
+//         return target[propKey];
+//       },
+//       set(target, propKey, value) {
+//         target[propKey] = value;
+//         return true;
+//       },
+//     });
+//     createSql.apply(proxy, rest);
+//     return proxy;
+//   };
+// }
 
 function getValueWithQuot(v: string, quot = "'") {
   if (v === "?") return v;
@@ -55,7 +55,8 @@ function setSelectSql(
   return this;
 }
 // 创建select sql语句
-const createSelectSql = referCreateSql<{ sql: string }, Parameters<typeof setSelectSql>>(setSelectSql);
+// const createSelectSql = referCreateSql<{ sql: string }, Parameters<typeof setSelectSql>>(setSelectSql);
+const createSelectSql = (...args: Parameters<typeof setSelectSql>) => setSelectSql.apply({ sql: "" }, args);
 
 function setInsertSql(this: { sql: string }, tableName: TABLE_NAME, keyValue: Object) {
   const keys = Object.keys(keyValue);
@@ -65,7 +66,8 @@ function setInsertSql(this: { sql: string }, tableName: TABLE_NAME, keyValue: Ob
   return this;
 }
 // 创建insert sql语句
-const createInsertSql = referCreateSql<{ sql: string }, Parameters<typeof setInsertSql>>(setInsertSql);
+// const createInsertSql = referCreateSql<{ sql: string }, Parameters<typeof setInsertSql>>(setInsertSql);
+const createInsertSql = (...args: Parameters<typeof setInsertSql>) => setInsertSql.apply({ sql: "" }, args);
 
 function setUpdateSql(this: { sql: string }, tableName: TABLE_NAME, keyValue: Object, whereValue?: Object) {
   const keys = Object.keys(keyValue);
@@ -79,7 +81,8 @@ function setUpdateSql(this: { sql: string }, tableName: TABLE_NAME, keyValue: Ob
   return this;
 }
 // 创建update sql语句
-const createUpdateSql = referCreateSql<{ sql: string }, Parameters<typeof setUpdateSql>>(setUpdateSql);
+// const createUpdateSql = referCreateSql<{ sql: string }, Parameters<typeof setUpdateSql>>(setUpdateSql);
+const createUpdateSql = (...args: Parameters<typeof setUpdateSql>) => setUpdateSql.apply({ sql: "" }, args);
 
 // ts编译会报错
 // function execSqlUsePromise<T extends RowDataPacket[] = any[]>(sql: string) {
