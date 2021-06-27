@@ -6,6 +6,13 @@
 - [express](https://expressjs.com/en/4x/api.html)
 - [typescript-search](https://www.typescriptlang.org/dt/search?search=)
 
+问题解决方案:
+
+- [tsconfig-paths](https://www.npmjs.com/package/tsconfig-paths)使 tsconfig 的 paths 属性在执行时也有效
+- [mysql-ssh](https://www.npmjs.com/package/mysql-ssh)解决 ssh 连接数据库服务的问题
+- [ts 3.9 `keyof` break change](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-9.html#example-1)
+- [log4js](https://www.npmjs.com/package/log4js)解决日志记录问题
+
 ## TODO
 
 不同用户，不同机型和不同系统下
