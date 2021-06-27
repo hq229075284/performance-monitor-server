@@ -69,7 +69,7 @@ interface typeofCreateSelectSql {
 let createSelectSql: typeofCreateSelectSql;
 if (PRINT_SQL_BEFORE_EXEC) {
   // 等号左侧类型要比右侧类型狭隘，保证函数调用时，参数满足左侧类型时，能兼容右侧类型
-  // 比如以下错误示范
+  // 比如:
   // var a:(p:string)=>void
   // var b:(p:string|number)=>void
   // a=b √ 受a变量类型约束，能兼容b变量类型
