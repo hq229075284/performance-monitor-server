@@ -1,11 +1,11 @@
 import type e from "express";
 import { MESSAGE_URL } from "../urls";
 import { IRequest, IResponse } from "../type";
-import { ENTRY_KEY, PV_KEY, UV_KEY } from "../../constant";
+import { ENTRY_KEY, FIRST_PAINT_KEY, PAGE_STAY_TIME_KEY, PV_KEY, UV_KEY } from "../../constant";
 import path = require("path");
 import fs = require("fs");
 // import type { IMessage } from "./process";
-import { processUV, processPV, processEntry } from "./process";
+import { processUV, processPV, processEntry, processPageStayTime, processFPT } from "./process";
 import log from "src/log";
 
 async function receiveMessage(req: IRequest, res: IResponse) {
@@ -37,6 +37,16 @@ async function receiveMessage(req: IRequest, res: IResponse) {
       case ENTRY_KEY: {
         await processEntry(params);
         log.success("网页访问入口采集成功");
+        break;
+      }
+      case PAGE_STAY_TIME_KEY: {
+        await processPageStayTime(params);
+        log.success("网页停留时间采集成功");
+        break;
+      }
+      case FIRST_PAINT_KEY: {
+        await processFPT(params);
+        log.success("网页第一次渲染时间采集成功");
         break;
       }
       default:

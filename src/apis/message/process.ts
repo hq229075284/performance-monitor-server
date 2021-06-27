@@ -11,6 +11,7 @@ export interface IMessage<TPayload = any> {
     language: string;
     platform: string;
   };
+  url: string;
   payload: TPayload;
   userInfo: { usercode: string; username: string };
 }
@@ -29,7 +30,7 @@ async function processPV(params: IMessage<string>) {
   //   sql = createSelectSql(TABLE_NAMES.PV, ["times"], { url: params.payload }).sql;
   //   const results = await execSqlUsePromise<Results>(sql);
   const sql = createInsertSql(TABLE_NAMES.PV, {
-    url: params.payload,
+    url: params.url,
     deviceName: params.clientInfo.device,
     deviceVersion: params.clientInfo.version,
     timestamp: Date.now(),
@@ -43,7 +44,7 @@ async function processUV(params: IMessage<{ url: string }>, req: IRequest) {
   sql = createSelectSql(
     TABLE_NAMES.UV,
     "*",
-    { usercode: params.userInfo.usercode, url: params.payload.url },
+    { usercode: params.userInfo.usercode, url: params.url },
     { orderKeys: ["timestamp"], sort: "desc" }
   ).sql;
   type Results = IResult<{ timestamp: number }>[];
@@ -61,7 +62,7 @@ async function processUV(params: IMessage<{ url: string }>, req: IRequest) {
     username: params.userInfo.username,
     ipv4,
     ipv6,
-    url: params.payload.url,
+    url: params.url,
     timestamp: now,
   }).sql;
   await execSqlUsePromise(sql);
@@ -70,10 +71,29 @@ async function processUV(params: IMessage<{ url: string }>, req: IRequest) {
 // 处理网站入口采集
 async function processEntry(params: IMessage<{ url: string; entryUrl: string }>) {
   const sql = createInsertSql(TABLE_NAMES.VISIT, {
-    url: params.payload.url,
+    url: params.url,
     from: params.payload.entryUrl,
   }).sql;
   await execSqlUsePromise(sql);
 }
 
-export { processPV, processUV, processEntry };
+// 页面停留时间采集
+async function processPageStayTime(params: Omit<IMessage<number>, "userInfo"> & { userInfo?: { usercode: number } }) {
+  const sql = createInsertSql(TABLE_NAMES.web_page_stay_time, {
+    url: params.url,
+    usercode: params.userInfo?.usercode,
+    duration: params.payload,
+  }).sql;
+  await execSqlUsePromise(sql);
+}
+
+// 首屏加载时间
+async function processFPT(params: IMessage<{ number }>) {
+  const sql = createInsertSql(TABLE_NAMES.FPT, {
+    url: params.url,
+    duration: params.payload,
+  }).sql;
+  await execSqlUsePromise(sql);
+}
+
+export { processPV, processUV, processEntry, processPageStayTime, processFPT };

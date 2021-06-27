@@ -11,4 +11,6 @@ export const TABLE_NAMES = {
   PV: "pv" as "pv",
   UV: "uv" as "uv",
   VISIT: "visit" as "visit",
+  FPT: "fpt" as "fpt",
+  web_page_stay_time: "web_page_stay_time" as "web_page_stay_time",
 };
