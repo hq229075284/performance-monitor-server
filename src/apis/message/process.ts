@@ -1,4 +1,4 @@
-import { TABLE_NAMES } from "../../constant";
+import { TABLE_NAMES } from "../db/table";
 import { createInsertSql, createSelectSql, createUpdateSql, execSqlUsePromise } from "../createSql";
 import type { IRequest, IResult } from "../type";
 
@@ -57,7 +57,7 @@ async function processUV(params: IMessage<{ url: string }>, req: IRequest) {
   if (results.length > 0) {
     const newest = results[0];
     if (getDate(newest.timestamp) === getDate(now)) {
-      throw new Error("UV重复采集");
+      throw new Error(JSON.stringify({ sql, message: "UV重复采集" }));
     }
   }
   const [ipv6, ipv4] = req.ip.split(/(?<=[^:]):/);

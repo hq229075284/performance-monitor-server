@@ -13,6 +13,8 @@ import {
 } from "../../constant";
 import path = require("path");
 import fs = require("fs");
+import { connectDBConfig } from "src/config";
+
 // import type { IMessage } from "./process";
 import {
   processUV,
@@ -25,6 +27,7 @@ import {
   processAjax,
 } from "./process";
 import log from "src/log";
+import { execSqlUsePromise } from "../createSql";
 
 async function receiveMessage(req: IRequest, res: IResponse) {
   const search = req.url.split("?")[1];
@@ -96,11 +99,20 @@ async function receiveMessage(req: IRequest, res: IResponse) {
     log.success(completeInfo.message);
   } catch (e) {
     log.split();
-    if (!/[\u4e00-\u9fa5]/.test(e.message)) {
+    let message, sql;
+    try {
+      ({ sql, message } = JSON.parse(e.message));
+    } catch {
+      message = e.message;
+    }
+    if (!/[\u4e00-\u9fa5]/.test(message)) {
       // 无中文为系统报错
       console.trace(e);
     }
-    log.error(`采集失败 => ${e.message}`);
+    if (sql) {
+      log.log(`${sql}`);
+    }
+    log.error(`采集失败 => ${message}`);
     res.end();
     return;
   }
@@ -117,5 +129,39 @@ async function receiveMessage(req: IRequest, res: IResponse) {
 export default {
   [MESSAGE_URL](app: e.Express) {
     app.get(MESSAGE_URL, receiveMessage);
+  },
+  createTableShape(app: e.Express) {
+    app.get("/createTableShape", async function (req, res: IResponse) {
+      const tableName = req.url.split("?")[1];
+      const sql = `
+      select * from information_schema.columns
+      where table_schema = '${connectDBConfig.dbConfig.db}'
+      and table_name = '${tableName}'
+      `;
+      const fields = await execSqlUsePromise(sql);
+      console.log(fields);
+      function reflectType(t) {
+        switch (true) {
+          case ["int", "bigint"].includes(t):
+            return "number";
+          case ["double"].includes(t):
+            return "number|string";
+          case ["varchar"].includes(t):
+            return "string";
+          default:
+            return "any";
+        }
+      }
+      const str = `export default interface ${tableName} {${fields
+        .map(
+          (field) => `
+  // ${field.COLUMN_COMMENT}
+  ${field.COLUMN_NAME}:${reflectType(field.DATA_TYPE)};`
+        )
+        .join("")}
+}`;
+      fs.writeFileSync(path.join(__dirname, `../db/tableShape/${tableName}.ts`), str);
+      res.send("create " + path.join(__dirname, `../db/tableShape/${tableName}.ts`));
+    });
   },
 };
