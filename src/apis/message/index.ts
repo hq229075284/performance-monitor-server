@@ -107,7 +107,7 @@ async function receiveMessage(req: IRequest, res: IResponse) {
     }
     if (!/[\u4e00-\u9fa5]/.test(message)) {
       // 无中文为系统报错
-      console.trace(e);
+      log.trace(e);
     }
     if (sql) {
       log.log(`${sql}`);

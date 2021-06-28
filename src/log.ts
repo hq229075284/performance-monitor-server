@@ -38,9 +38,15 @@ class Log {
     logger.warn(message);
   }
   error(message: string) {
-    if (!__DEBUG__) return;
-    console.log(chalk.redBright(message));
+    // 1. debug模式下输出
+    // 2. 非debug模式下，非中文信息输出（输出系统报错信息）
+    if (__DEBUG__ || !/[\u4e00-\u9fa5]/.test(message)) {
+      console.log(chalk.redBright(message));
+    }
     logger.error(message);
+  }
+  trace(e) {
+    console.trace(e);
   }
 }
 
