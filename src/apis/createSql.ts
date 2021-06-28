@@ -1,6 +1,6 @@
 import type { RowDataPacket } from "mysql2/typings/mysql";
-import waitConnect from "../connect";
-import { PRINT_SQL_BEFORE_EXEC } from "src/config";
+import pool, { getSSHStream, pushStream, connectionStatus } from "../connect";
+import { connectDBConfig, PRINT_SQL_BEFORE_EXEC } from "src/config";
 import mysql2 from "mysql2";
 import { TABLE_NAMES, ITableShape } from "./db/table";
 
@@ -129,9 +129,17 @@ if (PRINT_SQL_BEFORE_EXEC) {
 // }
 
 async function execSqlUsePromise<T extends RowDataPacket[] = any[]>(sql: string) {
-  const connect = await waitConnect;
-  const results = await new Promise<T>((resolve) => {
-    connect.query<T>(sql, function (err, results, fields) {
+  const results = await new Promise<T>(async (resolve) => {
+    // 未达到连接上限
+    if (connectionStatus.createdConnection < connectDBConfig.dbConfig.connectionLimit) {
+      // stream与connection一一对应：https://github.com/sidorares/node-mysql2/issues/653#issuecomment-338793064
+      const stream = await getSSHStream(); // FIXME:尝试不要每个请求都创建stream
+      // stream创建过程中，连接池状态可能发生变化，需在stream创建后，判断是否存在空闲的`连接`
+      if (connectionStatus.freeConnection === 0) {
+        pushStream(stream); // 如无空闲`连接`时，推入一个stream，用于pool.query时创建一个新的`连接`
+      }
+    }
+    pool.query<T>(sql, function (err, results, fields) {
       if (err) throw err;
       resolve(results);
     });

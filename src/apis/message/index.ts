@@ -135,7 +135,7 @@ export default {
       const tableName = req.url.split("?")[1];
       const sql = `
       select * from information_schema.columns
-      where table_schema = '${connectDBConfig.dbConfig.db}'
+      where table_schema = '${connectDBConfig.dbConfig.database}'
       and table_name = '${tableName}'
       `;
       const fields = await execSqlUsePromise(sql);

@@ -8,10 +8,11 @@ export const connectDBConfig = {
   },
   dbConfig: {
     host: "localhost",
-    port: "3306",
-    username: "root",
-    pwd: secret.dbPwd,
-    db: "monitor",
+    port: 3306,
+    user: "root",
+    password: secret.dbPwd,
+    database: "monitor",
+    connectionLimit: 1 << 6, // 2^6
   },
 };
 

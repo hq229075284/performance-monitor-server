@@ -12,6 +12,7 @@
   "devDependencies": {
     "@types/express": "^4.17.12",
     "@types/mysql": "^2.15.18",
+    "@types/ssh2": "^0.5.46",
     "express": "^4.17.1",
     "pm2": "^5.1.0",
     "ts-node": "^10.0.0",
@@ -20,8 +21,8 @@
   "dependencies": {
     "chalk": "^4.1.1",
     "log4js": "^6.3.0",
-    "mysql-ssh": "^1.0.6",
     "mysql2": "^2.2.5",
+    "ssh2": "^0.5.4",
     "tsconfig-paths": "^3.9.0",
     "tslib": "^2.3.0"
   }
