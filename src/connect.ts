@@ -4,8 +4,6 @@
 // import mysqlSsh from "mysql-ssh" => var mysql_ssh_1 = require("mysql-ssh");mysql_ssh_1["default"].connect
 // import * as mysqlSsh from "mysql-ssh"; => var mysqlSsh = require("mysql-ssh");mysqlSsh.connect
 
-import type { Connection } from "mysql2";
-
 import mysql2 from "mysql2";
 import * as config from "src/config";
 import log from "src/log";
@@ -13,7 +11,7 @@ import { Client, ClientChannel } from "ssh2";
 
 const { dbConfig, sshConfig } = config.connectDBConfig;
 
-const sshClientReady = new Promise<Client>((resolve) => {
+export const sshClientReady = new Promise<Client>((resolve) => {
   const client = new Client();
   client
     .on("ready", function () {

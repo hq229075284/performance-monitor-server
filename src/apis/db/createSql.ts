@@ -25,10 +25,10 @@ function referCreateSql<T extends {} = { sql: string }, P extends any[] = []>(cr
   };
 }
 
-function getValueWithQuot(v: string, quot = "`") {
-  if (v === "?") return v;
-  return `${quot}${v}${quot}`;
-}
+// function getValueWithQuot(v: string, quot = "`") {
+//   if (v === "?") return v;
+//   return `${quot}${v}${quot}`;
+// }
 
 function getSubStatementOfWhere(whereValue: IWhereValue) {
   const keys = Object.keys(whereValue);
@@ -78,7 +78,7 @@ interface typeofCreateSelectSql {
     // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-9.html#example-1
     fields: Extract<keyof ITableShape[T], string>[] | "*",
     whereValue?: IWhereValue<ITableShape[T]>,
-    orderBy?: { orderKeys: string[]; sort: "desc" | "asc" },
+    orderBy?: { orderKeys: Extract<keyof ITableShape[T], string>[]; sort: "desc" | "asc" },
     groupBy?: string
   ): { sql: string };
 }
@@ -105,7 +105,19 @@ function setInsertSql(this: { sql: string }, tableName: TABLE_NAME, keyValue: Ob
   return this;
 }
 // 创建insert sql语句
-let createInsertSql: (...args: Parameters<typeof setInsertSql>) => { sql: string };
+// type IRequireOrNot<T = any, O = any> = { [K in keyof T]: K extends O ? T[K] | never : T[K] };
+// type IRequireOrNot<T, O extends keyof T> = Required<Pick<T, Exclude<keyof T, O>>> & Partial<Pick<T, O>>;
+// var a: IRequireOrNot<ITableShape["project"], "project_key">;
+// a = {
+//   name: "1",
+//   project_key: "1",
+// };
+// var a: IRequireOrNot<ITableShape[TABLE_NAME], keyof ITableShape[TABLE_NAME]>;
+// a = {
+//   project_key: "1",
+// };
+
+let createInsertSql: <T extends TABLE_NAME>(tableName: T, keyValue: ITableShape[T]) => { sql: string };
 if (PRINT_SQL_BEFORE_EXEC) {
   createInsertSql = referCreateSql<{ sql: string }, Parameters<typeof setInsertSql>>(setInsertSql);
 } else {
@@ -114,23 +126,37 @@ if (PRINT_SQL_BEFORE_EXEC) {
 // #endregion insert sql
 
 // #region update sql
-function setUpdateSql(this: { sql: string }, tableName: TABLE_NAME, keyValue: Object, whereValue?: IWhereValue) {
+function setUpdateSql(this: { sql: string }, tableName: TABLE_NAME, keyValue: Object, whereValue: IWhereValue) {
   // const keys = Object.keys(keyValue);
-  let where = "";
-  if (whereValue) {
-    where = getSubStatementOfWhere(whereValue);
-  }
+  let where = getSubStatementOfWhere(whereValue);
   this.sql = `UPDATE ${escapeId(tableName)} SET ${escape(keyValue)} ${where}`;
   return this;
 }
 // 创建update sql语句
-let createUpdateSql: (...args: Parameters<typeof setUpdateSql>) => { sql: string };
+let createUpdateSql: <T extends TABLE_NAME>(
+  tableName: T,
+  keyValue: Partial<ITableShape[T]>,
+  whereValue: IWhereValue<ITableShape[T]>
+) => { sql: string };
 if (PRINT_SQL_BEFORE_EXEC) {
   createUpdateSql = referCreateSql<{ sql: string }, Parameters<typeof setUpdateSql>>(setUpdateSql);
 } else {
   createUpdateSql = (...args) => setUpdateSql.apply({ sql: "" }, args);
 }
 // #endregion update sql
+
+// #region  delete sql
+function setDeleteSql(this: { sql: string }, tableName: TABLE_NAME, whereValue: IWhereValue) {
+  this.sql = `DELETE FROM ${escapeId(tableName)} where ${getSubStatementOfWhere(whereValue)} `;
+  return this;
+}
+let createDeleteSql: <T extends TABLE_NAME>(tableName: T, whereValue: IWhereValue<ITableShape[T]>) => { sql: string };
+if (PRINT_SQL_BEFORE_EXEC) {
+  createDeleteSql = referCreateSql<{ sql: string }, Parameters<typeof setDeleteSql>>(setDeleteSql);
+} else {
+  createDeleteSql = (...args) => setDeleteSql.apply({ sql: "" }, args);
+}
+// #endregion delete sql
 
 // ts编译会报错
 // function execSqlUsePromise<T extends RowDataPacket[] = any[]>(sql: string) {
@@ -163,4 +189,4 @@ async function execSqlUsePromise<T extends RowDataPacket[] = any[]>(sql: string)
   return results;
 }
 
-export { createSelectSql, createInsertSql, createUpdateSql, execSqlUsePromise };
+export { createSelectSql, createInsertSql, createUpdateSql, execSqlUsePromise, createDeleteSql };

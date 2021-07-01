@@ -2,3 +2,4 @@ node_modules
 dist
 secret/**
 log**
+.DS_store

@@ -1,5 +1,5 @@
 import type e from "express";
-import { MESSAGE_URL } from "../urls";
+import { CORS_URL, MESSAGE_URL } from "../urls";
 import { IRequest, IResponse } from "../type";
 import {
   AJAX_KEY,
@@ -52,7 +52,6 @@ async function receiveMessage(req: IRequest, res: IResponse) {
       }
       case UV_KEY: {
         completeInfo = await processUV(params, req);
-        log.success("uv采集成功");
         break;
       }
       case ENTRY_KEY: {
@@ -130,13 +129,12 @@ export default {
   [MESSAGE_URL](app: e.Express) {
     app.get(MESSAGE_URL, receiveMessage);
   },
-  test(app: e.Express) {
-    app.get("/test", (req, res) => {
-      res.setHeader("Access-Control-Allow-Origin", "*");
+  [CORS_URL](app: e.Express) {
+    app.get(CORS_URL, (req, res) => {
       res.send("success");
     });
   },
-  createTableShape(app: e.Express) {
+  /* createTableShape(app: e.Express) {
     app.get("/createTableShape", async function (req, res: IResponse) {
       const tableName = req.url.split("?")[1];
       const sql = `
@@ -145,7 +143,7 @@ export default {
       and table_name = '${tableName}'
       `;
       const fields = await execSqlUsePromise(sql);
-      console.log(fields);
+      // console.log(fields);
       function reflectType(t) {
         switch (true) {
           case ["int", "bigint"].includes(t):
@@ -162,12 +160,12 @@ export default {
         .map(
           (field) => `
   // ${field.COLUMN_COMMENT}
-  ${field.COLUMN_NAME}:${reflectType(field.DATA_TYPE)};`
+  ${field.COLUMN_NAME}: ${reflectType(field.DATA_TYPE)};`
         )
         .join("")}
 }`;
       fs.writeFileSync(path.join(__dirname, `../db/tableShape/${tableName}.ts`), str);
       res.send("create " + path.join(__dirname, `../db/tableShape/${tableName}.ts`));
     });
-  },
+  }, */
 };
