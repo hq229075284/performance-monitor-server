@@ -83,19 +83,19 @@ if (config.connectDBConfig.useSSH) {
 }
 
 pool.on("acquire", function () {
-  log.log("从连接池中获取到一个连接");
+  if (config.FLAG.SHOW_CONNECTION_POOL_STATUS) log.log("从连接池中获取到一个连接");
   freeConnection--;
 });
 pool.on("connection", function () {
-  log.log("新连接被创建");
+  if (config.FLAG.SHOW_CONNECTION_POOL_STATUS) log.log("新连接被创建");
   createdConnection++;
   freeConnection++; // 后面会马上执行`acquire`的回调
 });
 pool.on("enqueue", function () {
-  log.log("有查询事务正在等待连接池分配连接");
+  if (config.FLAG.SHOW_CONNECTION_POOL_STATUS) log.log("有查询事务正在等待连接池分配连接");
 });
 pool.on("release", function () {
-  log.log("连接已释放回连接池");
+  if (config.FLAG.SHOW_CONNECTION_POOL_STATUS) log.log("连接已释放回连接池");
   freeConnection++;
 });
 

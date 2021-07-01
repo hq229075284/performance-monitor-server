@@ -1,8 +1,8 @@
 import type { RowDataPacket } from "mysql2/typings/mysql";
-import pool, { getSSHStream, pushStream, connectionStatus } from "../connect";
+import pool, { getSSHStream, pushStream, connectionStatus } from "src/connect";
 import { connectDBConfig, PRINT_SQL_BEFORE_EXEC } from "src/config";
-import mysql2 from "mysql2";
-import { TABLE_NAMES, ITableShape } from "./db/table";
+import { escape, escapeId } from "sqlstring";
+import { TABLE_NAMES, ITableShape } from "./table";
 
 type TABLE_NAME = typeof TABLE_NAMES[keyof typeof TABLE_NAMES];
 
@@ -30,17 +30,32 @@ function getValueWithQuot(v: string, quot = "`") {
   return `${quot}${v}${quot}`;
 }
 
-function getSubStatementOfWhere(whereValue: Object) {
+function getSubStatementOfWhere(whereValue: IWhereValue) {
   const keys = Object.keys(whereValue);
-  return ` WHERE ${keys.map((key) => `${getValueWithQuot(key)}=${mysql2.escape(whereValue[key])}`).join(" and ")} `;
+  return ` WHERE ${keys
+    .map(
+      (key) =>
+        `${escapeId(key)}=${(() => {
+          const value = whereValue[key];
+          if (typeof value === "object") {
+            return value.needEscape ? escape(value.value) : value.value;
+          }
+          return escape(value);
+        })()}`
+    )
+    .join(" and ")} `;
 }
+
+type IWhereValue<T = any> = {
+  [key in keyof T]?: string | number | { needEscape: boolean; value: string | number };
+};
 
 // #region select sql
 function setSelectSql(
   this: { sql: string },
   tableName: string,
   fields: string[] | "*",
-  whereValue?: Object,
+  whereValue?: IWhereValue,
   orderBy?: { orderKeys: string[]; sort: "desc" | "asc" },
   groupBy?: string
 ) {
@@ -50,18 +65,19 @@ function setSelectSql(
   }
   let order = "";
   if (orderBy) {
-    order = ` ORDER BY ${mysql2.escape(orderBy.orderKeys)} ${orderBy.sort} `;
+    order = ` ORDER BY ${escapeId(orderBy.orderKeys)} ${orderBy.sort} `;
   }
-  this.sql = `SELECT ${fields === "*" ? "*" : mysql2.escape(fields)} FROM ${tableName} ${where} ${order}`;
+  this.sql = `SELECT ${fields === "*" ? "*" : escapeId(fields)} FROM ${escapeId(tableName)} ${where} ${order}`;
   return this;
 }
+
 // 创建select sql语句
 interface typeofCreateSelectSql {
   <T extends TABLE_NAME>(
     tableName: T,
     // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-9.html#example-1
     fields: Extract<keyof ITableShape[T], string>[] | "*",
-    whereValue?: Object,
+    whereValue?: IWhereValue<ITableShape[T]>,
     orderBy?: { orderKeys: string[]; sort: "desc" | "asc" },
     groupBy?: string
   ): { sql: string };
@@ -83,8 +99,8 @@ if (PRINT_SQL_BEFORE_EXEC) {
 // #region insert sql
 function setInsertSql(this: { sql: string }, tableName: TABLE_NAME, keyValue: Object) {
   const keys = Object.keys(keyValue);
-  this.sql = `INSERT INTO ${tableName} (${keys.map((k) => getValueWithQuot(k)).join(",")}) VALUES (${keys
-    .map((key) => mysql2.escape(keyValue[key]))
+  this.sql = `INSERT INTO ${escapeId(tableName)} (${keys.map((k) => escapeId(k)).join(",")}) VALUES (${keys
+    .map((key) => escape(keyValue[key]))
     .join(",")})`;
   return this;
 }
@@ -98,13 +114,13 @@ if (PRINT_SQL_BEFORE_EXEC) {
 // #endregion insert sql
 
 // #region update sql
-function setUpdateSql(this: { sql: string }, tableName: TABLE_NAME, keyValue: Object, whereValue?: Object) {
+function setUpdateSql(this: { sql: string }, tableName: TABLE_NAME, keyValue: Object, whereValue?: IWhereValue) {
   // const keys = Object.keys(keyValue);
   let where = "";
   if (whereValue) {
     where = getSubStatementOfWhere(whereValue);
   }
-  this.sql = `UPDATE ${tableName} SET ${mysql2.escape(keyValue)} ${where}`;
+  this.sql = `UPDATE ${escapeId(tableName)} SET ${escape(keyValue)} ${where}`;
   return this;
 }
 // 创建update sql语句

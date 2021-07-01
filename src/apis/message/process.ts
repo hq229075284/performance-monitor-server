@@ -1,5 +1,5 @@
 import { TABLE_NAMES } from "../db/table";
-import { createInsertSql, createSelectSql, createUpdateSql, execSqlUsePromise } from "../createSql";
+import { createInsertSql, createSelectSql, createUpdateSql, execSqlUsePromise } from "../db/createSql";
 import type { IRequest, IResult } from "../type";
 
 export interface IMessage<TPayload = any> {
@@ -133,22 +133,26 @@ async function processFIT(params: IMessage<number>) {
 }
 
 async function processStaticSourceLoaded(
-  params: IMessage<{ [key: string]: { initiatorType: string; duration: number; name: string } }>
+  params: IMessage<{ [key: string]: { initiatorType: string; duration: number; name: string }[] }>
 ) {
   const now = Date.now();
   const sqls: string[] = [];
   await Promise.all(
-    Object.keys(params.payload).map(async (key) => {
-      const sql = createInsertSql(TABLE_NAMES.static_source_download_time, {
-        source_url: params.payload[key].name,
-        source_type: params.payload[key].initiatorType,
-        source_download_time: params.payload[key].duration,
-        ownerUrl: params.url,
-        timestamp: now,
-      }).sql;
-      await execSqlUsePromise(sql);
-      sqls.push(sql);
-    })
+    Object.keys(params.payload).reduce<Promise<void>[]>((prev, key) => {
+      return prev.concat(
+        params.payload[key].map(async (item) => {
+          const sql = createInsertSql(TABLE_NAMES.static_source_download_time, {
+            source_url: item.name,
+            source_type: item.initiatorType,
+            source_download_time: item.duration,
+            ownerUrl: params.url,
+            timestamp: now,
+          }).sql;
+          await execSqlUsePromise(sql);
+          sqls.push(sql);
+        })
+      );
+    }, [])
   );
   return {
     sql: sqls,
@@ -159,7 +163,7 @@ async function processStaticSourceLoaded(
 async function processAjax(params: IMessage<{ url: string; body: any; startTime: number; endTime: number; duration: number }>) {
   const sql = createInsertSql(TABLE_NAMES.AJAX, {
     url: params.payload.url,
-    duration: params.payload.duration,
+    duration: params.payload.duration.toFixed(5),
     ownerUrl: params.url,
     timestamp: Date.now(),
   }).sql;

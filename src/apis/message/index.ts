@@ -27,7 +27,7 @@ import {
   processAjax,
 } from "./process";
 import log from "src/log";
-import { execSqlUsePromise } from "../createSql";
+import { execSqlUsePromise } from "../db/createSql";
 
 async function receiveMessage(req: IRequest, res: IResponse) {
   const search = req.url.split("?")[1];
@@ -129,6 +129,12 @@ async function receiveMessage(req: IRequest, res: IResponse) {
 export default {
   [MESSAGE_URL](app: e.Express) {
     app.get(MESSAGE_URL, receiveMessage);
+  },
+  test(app: e.Express) {
+    app.get("/test", (req, res) => {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.send("success");
+    });
   },
   createTableShape(app: e.Express) {
     app.get("/createTableShape", async function (req, res: IResponse) {
